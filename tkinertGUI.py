@@ -31,7 +31,7 @@ class appMatriculas:
         window.geometry(str(self.screen_width) + 'x' + str(self.screen_height))
 
         #Con esta función pretendo hacer la página responsive.
-        #self.responsive()
+        self.responsive()
 
         #Iniciamos los botones les asignamos valor y posición.
         self.iniciarBotones()
@@ -50,7 +50,7 @@ class appMatriculas:
 
     def responsive(self):
         
-        for i in range(9):
+        for i in range(11):
             window.grid_rowconfigure(i, weight=1)
             window.grid_columnconfigure(i, weight=1) 
 
@@ -151,7 +151,7 @@ class appMatriculas:
 
         self.canvasDetection = tkinter.Canvas(window, width=400, height=400)#, background='white'
         self.canvasDetection.grid(row=1, column=2, columnspan=10, rowspan=10, padx=(20, 20))
-    
+
 
     def webcam_control(self):
 
@@ -210,27 +210,29 @@ class appMatriculas:
     def mostrarImagen(self):
         
         redimWidth, redimHeight = self.canvasDetection.winfo_width(),self.canvasDetection.winfo_height()
-
         try:
-            frame = cv2.imread(self.filesNomb[self.contadorImagen])
+            #Al parecer los self.frame, self.image son super importantes asi que no eliminar
+            self.frame = cv2.imread(self.filesNomb[self.contadorImagen])
 
             if self.controlDetection:
                 #codigo de deteccion
 
                 #Devuelve imagen y recortes
-                abc = 3
+                abc = "Estoy detectando matriculas"
+                print(abc)
 
                 if self.controlOCR:
 
                     #codigo OCR
                     
                     #Para cada matricula encontrada le aplicamos el OCR
-                    abc = 5
+                    abc = "Y ademas estoy también haciendo un reconocimiento de caracteres"
+                    print(abc)
 
-            frame = cv2.resize(frame, (redimWidth,redimHeight))
+            self.frame = cv2.resize(self.frame, (redimWidth,redimHeight))
   
-            image = ImageTk.PhotoImage(Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))
-            self.canvasDetection.create_image(0, 0, image=image, anchor=NW)
+            self.image = ImageTk.PhotoImage(Image.fromarray(cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)))
+            self.canvasDetection.create_image(0, 0, image=self.image, anchor=NW)
         except:
             return
 
