@@ -4,13 +4,12 @@ from tkinter import *
 import tkinter.filedialog
 from tkinter.filedialog import askopenfilename
 
-from PIL import Image
-from PIL import ImageTk
+from PIL import Image, ImageTk
 
 import cv2
+import os
 
 import threading
-import sys
 
 #import matDetec
 #import matRecog
@@ -44,6 +43,9 @@ class appMatriculas:
 
         self.controlDetection = False
         self.controlOCR = False
+        self.controlEscribirTxt = False
+
+        self.contadorImagen = 0
 
 
     def responsive(self):
@@ -92,6 +94,13 @@ class appMatriculas:
         self.btnOCR = Button(window, text="OCR", font=("Arial Bold", 12), command = self.activarOCR, height = self._height, width = self._width)
         self.btnOCR.grid(column=0, row=8)
 
+        #############################################################################################################################################
+        window.grid_rowconfigure(9, minsize=20)
+        #############################################################################################################################################
+
+        self.btnEscribirTxt = Button(window, text="Escribir txt", font=("Arial Bold", 12), command = self.activarEscribirTxt, height = self._height, width = self._width)
+        self.btnEscribirTxt.grid(column=0, row=10)
+
         # ================================================ COLUMNA 0 ================================================ #
 
 
@@ -106,30 +115,68 @@ class appMatriculas:
         self.controlColorOCR = Label(window, text="", height = self._height, width = self._widthCol2, bg="red")
         self.controlColorOCR.grid(column=1, row=8, padx=(5, 5))
 
+        self.ControlColorEscribirTxt = Label(window, text="", height = self._height, width = self._widthCol2, bg="red")
+        self.ControlColorEscribirTxt.grid(column=1, row=10, padx=(5, 5))
+
         # ================================================ COLUMNA 1 ================================================ #
 
         self.panel = Label(window, text="Detecciones", height = 30, width = 100, borderwidth=2, relief="solid", anchor=NW)
         self.panel.grid(row=1, column=2, columnspan=10, rowspan=10, padx=(20, 20))
 
-        self.canvasDetection = tkinter.Canvas(window, width=480, height=480, background='white')
-        self.canvasDetection.grid(row=1, column=2, columnspan=10, rowspan=10, padx=(20, 20))
+        self.resetCanvas()
 
         self.panelOCR = Label(window, text="OCR", height = 30, width = 30, borderwidth=2, relief="solid")
         self.panelOCR.grid(row=1, column=13, columnspan=2, rowspan=10, padx=(20, 20))
+
+        # ================================================ BOTONES SUPERIORES ================================================ #
+
+        #############################################################################################################################################
+        window.grid_columnconfigure(2, minsize=50)
+        #############################################################################################################################################
+
+        self.btnRetrocederTodo = Button(window, text="<<", font=("Arial Bold", 15), command = self.primeraImagen, height = 1, width = 5)
+        self.btnRetrocederTodo.grid(column=3, row=0)
+
+        self.btnRetrocederUno = Button(window, text="<", font=("Arial Bold", 15), command = self.anteriorImagen, height = 1, width = 5)
+        self.btnRetrocederUno.grid(column=4, row=0)
+
+        self.btnAvanzarUna = Button(window, text=">", font=("Arial Bold", 15), command = self.siguienteImagen, height = 1, width = 5)
+        self.btnAvanzarUna.grid(column=5, row=0)
+
+        self.btnAvanzarTodo = Button(window, text=">>", font=("Arial Bold", 15), command = self.ultimaImagen, height = 1, width = 5)
+        self.btnAvanzarTodo.grid(column=6, row=0)
+
     
+    def resetCanvas(self):
+
+        self.canvasDetection = tkinter.Canvas(window, width=400, height=400)#, background='white'
+        self.canvasDetection.grid(row=1, column=2, columnspan=10, rowspan=10, padx=(20, 20))
+    
+
     def webcam_control(self):
 
         if(not self.camControl):
 
             self.camControl = True
 
-            self.cap = cv2.VideoCapture(0)
+            try:
+                self.cap = cv2.VideoCapture(0)
+            except:
+                try:
+                    self.cap = cv2.VideoCapture(-1)
+                except:
+                    try:
+                        self.cap = cv2.VideoCapture(1)
+                    except:
+                        return
 
             self.stopEvent = threading.Event()
             self.thread = threading.Thread(target=self.iniciar_webcam)
             self.thread.start()
 
         else:
+
+            self.resetCanvas()
 
             self.cap.release()
             self.stopEvent.set()
@@ -138,44 +185,148 @@ class appMatriculas:
 
 
     def iniciar_webcam(self):
+        
+        redimWidth, redimHeight = self.canvasDetection.winfo_width(),self.canvasDetection.winfo_height()
 
         while not self.stopEvent.is_set():
 
             try:
-                ret, frame = self.cap.read()
-                #frame = cv2.resize(frame, (480,480))
-            except:
-                return
-
-            try:
+                _, frame = self.cap.read()
+                frame = cv2.resize(frame, (redimWidth,redimHeight))
+ 
                 image = ImageTk.PhotoImage(Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))
-                self.canvasDetection.create_image(0, 0, image=image)
+                self.canvasDetection.create_image(0, 0, image=image, anchor=NW)
             except:
                 self.cap.release()
                 self.stopEvent.set()
                 break
+            
+            try:
+                cv2.waitKey(50)
+            except:
+                break
 
+
+    def mostrarImagen(self):
+        
+        redimWidth, redimHeight = self.canvasDetection.winfo_width(),self.canvasDetection.winfo_height()
+
+        try:
+            frame = cv2.imread(self.filesNomb[self.contadorImagen])
+
+            if self.controlDetection:
+                #codigo de deteccion
+
+                #Devuelve imagen y recortes
+                abc = 3
+
+                if self.controlOCR:
+
+                    #codigo OCR
+                    
+                    #Para cada matricula encontrada le aplicamos el OCR
+                    abc = 5
+
+            frame = cv2.resize(frame, (redimWidth,redimHeight))
+  
+            image = ImageTk.PhotoImage(Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))
+            self.canvasDetection.create_image(0, 0, image=image, anchor=NW)
+        except:
+            return
+
+
+    def siguienteImagen(self):
+
+        try:
+            if self.contadorImagen < len(self.filesNomb)-1:
+                self.contadorImagen += 1
+                self.mostrarImagen()
+        except:
+            return
+
+    
+    def anteriorImagen(self):
+        
+        try:
+            if self.contadorImagen > 0 and len(self.filesNomb)>0:
+                self.contadorImagen -= 1
+                self.mostrarImagen()
+        except:
+            return
+
+    def primeraImagen(self):
+        
+        try:
+            if len(self.filesNomb)>0 and self.contadorImagen != 0:
+                self.contadorImagen = 0
+                self.mostrarImagen()
+        except:
+            return
+
+    
+    def ultimaImagen(self):
+        
+        try:
+            if len(self.filesNomb)>0 and self.contadorImagen < len(self.filesNomb)-1:
+                self.contadorImagen = len(self.filesNomb)-1
+                self.mostrarImagen()
+        except:
+            return
+
+    
+    def filesRead(self, _path, archivosPermitidos):
+        filesNomb = []
+        for ruta, _, ficheros in os.walk(_path):
+            for nombreFichero in ficheros:
+                rutComp = os.path.join(ruta, nombreFichero)
+                for arcPerm in archivosPermitidos:
+                    if rutComp.endswith(arcPerm):
+                        filesNomb.append(rutComp)
+        return filesNomb
+
+    def fileRead(self, _path, archivosPermitidos):
+        filesNomb = []
+        for arcPerm in archivosPermitidos:
+            if _path.endswith(arcPerm):
+                filesNomb.append(_path)
+        return filesNomb
 
     def abrirImagen(self):
 
-        filename = askopenfilename(initialdir = "/",title = "Elije un archivo",filetypes = (("jpg files","*.jpg"),
+        _path = askopenfilename(initialdir = "/",title = "Elije un archivo",filetypes = (("jpg files","*.jpg"),
                                                                                             ("png files","*.png"),
                                                                                             ("jpeg files","*.jpeg"),
                                                                                             ("JPG files","*.JPG"),
                                                                                             ("all files","*.*")))
 
+        self.filesNomb = self.fileRead(_path, ["jpg","jpeg","png","JPG"])
+        
+        if self.filesNomb != []:
+            self.contadorImagen = 0
+            self.mostrarImagen()
+
+        #if self.controlColorDetectar:
+            #Ahora ejecutaríamos el código de detectar.
+
     
     def abrirDirectorio(self):
     
-        filename = tkinter.filedialog.askdirectory(initialdir = "/",title = "Elije un directorio")
+        _path = tkinter.filedialog.askdirectory(initialdir = "/",title = "Elije un directorio")
+        self.filesNomb = self.filesRead(_path, ["jpg","jpeg","png","JPG"])
+
+        if self.filesNomb != []:
+            self.contadorImagen = 0
+            self.mostrarImagen()
 
     
     def abrirVideo(self):
     
-        filename = askopenfilename(initialdir = "/",title = "Elije un archivo",filetypes = (("mp4 files","*.mp4"),
+        _path = askopenfilename(initialdir = "/",title = "Elije un archivo",filetypes = (("mp4 files","*.mp4"),
                                                                                             ("avi files","*.avi"),
                                                                                             ("mpg files","*.mpg"),
                                                                                             ("all files","*.*")))
+
+        self.filesNomb = self.fileRead(_path, ["mp4","avi","mpg"])                                                                                             
 
 
     def activarDeteccion(self):
@@ -225,6 +376,22 @@ class appMatriculas:
             self.controlColorOCR = Label(window, text="", height = self._height, width = self._widthCol2, bg="green")
             self.controlColorOCR.grid(column=1, row=8)
 
+    
+    def activarEscribirTxt(self):
+
+        if(self.controlEscribirTxt):
+
+            self.controlEscribirTxt = False
+
+            self.ControlColorEscribirTxt = Label(window, text="", height = self._height, width = self._widthCol2, bg="red")
+            self.ControlColorEscribirTxt.grid(column=1, row=10)
+        else:
+
+            self.controlEscribirTxt = True
+
+            self.ControlColorEscribirTxt = Label(window, text="", height = self._height, width = self._widthCol2, bg="green")
+            self.ControlColorEscribirTxt.grid(column=1, row=10)
+
 
     def exit_window(self):
 
@@ -239,7 +406,6 @@ class appMatriculas:
             pass
             
         window.destroy()
-        sys.exit
 
     
 
