@@ -11,7 +11,9 @@ import os
 
 import threading
 
-#import matDetec
+import tensorflow as tf
+
+import matDetec
 #import matRecog
 
 class appMatriculas:
@@ -46,6 +48,12 @@ class appMatriculas:
         self.controlEscribirTxt = False
 
         self.contadorImagen = 0
+
+        #Cargamos las clases para analizar las imágenes#
+        #***************************************************************************#
+        self.claseMatDetec = matDetec.clasMatDetec
+        self.matDetecClass = matDetec.matDetec()
+        #***************************************************************************#
 
 
     def responsive(self):
