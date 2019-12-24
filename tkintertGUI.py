@@ -41,7 +41,7 @@ class appMatriculas:
         #Variables de control
         self.camControl = False
         self.controlOCR = False
-        self.controlNMS = False
+        self.controlNMS = True
 
         self.controlDetection = False
         self.controlOCR = False
@@ -117,7 +117,7 @@ class appMatriculas:
         self.controlColorDetectar = Label(window, text="", height = self._height, width = self._widthCol2, bg="red")
         self.controlColorDetectar.grid(column=1, row=5, padx=(5, 5))
 
-        self.controlColorNMS = Label(window, text="", height = self._height, width = self._widthCol2, bg="red")
+        self.controlColorNMS = Label(window, text="", height = self._height, width = self._widthCol2, bg="green")
         self.controlColorNMS.grid(column=1, row=6, padx=(5, 5))
 
         self.controlColorOCR = Label(window, text="", height = self._height, width = self._widthCol2, bg="red")
@@ -131,6 +131,7 @@ class appMatriculas:
         self.panel = Label(window, text="Detecciones", height = 30, width = 100, borderwidth=2, relief="solid", anchor=NW)
         self.panel.grid(row=1, column=2, columnspan=10, rowspan=10, padx=(20, 20))
 
+        self.cuadroDeTexto("")
         self.resetCanvas()
 
         self.panelOCR = Label(window, text="OCR", height = 30, width = 30, borderwidth=2, relief="solid")
@@ -153,12 +154,18 @@ class appMatriculas:
 
         self.btnAvanzarTodo = Button(window, text=">>", font=("Arial Bold", 15), command = self.ultimaImagen, height = 1, width = 5)
         self.btnAvanzarTodo.grid(column=6, row=0)
-
     
+
     def resetCanvas(self):
 
         self.canvasDetection = tkinter.Canvas(window, width=400, height=400)#, background='white'
         self.canvasDetection.grid(row=1, column=2, columnspan=10, rowspan=10, padx=(20, 20))
+
+
+    def cuadroDeTexto(self, texto):
+
+        self.textoInformacion = Label(window, text=texto, height = 2, width = 100, borderwidth=2, relief="solid", anchor=NW)
+        self.textoInformacion.grid(row=10, column=2, columnspan=10, padx=(3, 3))
 
 
     def webcam_control(self):
@@ -221,6 +228,7 @@ class appMatriculas:
         try:
             #Al parecer los self.frame, self.image son super importantes asi que no eliminar
             self.frame = cv2.imread(self.filesNomb[self.contadorImagen])
+            self.cuadroDeTexto("Imagen: " + str(self.contadorImagen+1) + "/" + str(len(self.filesNomb)) )
 
             if self.controlDetection:
                 #codigo de deteccion
@@ -241,6 +249,8 @@ class appMatriculas:
             self.image = ImageTk.PhotoImage(Image.fromarray(cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)))
             self.canvasDetection.create_image(0, 0, image=self.image, anchor=NW)
         except:
+            self.cuadroDeTexto("Imagen: " + str(self.contadorImagen+1) + "/" + str(len(self.filesNomb)) + "\t Error: imposible mostrar imagen - " + self.filesNomb[self.contadorImagen])
+            self.resetCanvas()
             return
 
 
@@ -359,12 +369,14 @@ class appMatriculas:
         if(self.controlNMS):
 
             self.controlNMS = False
+            self.claseMatDetec.nms = self.controlNMS
 
             self.controlColorNMS = Label(window, text="", height = self._height, width = self._widthCol2, bg="red")
             self.controlColorNMS.grid(column=1, row=6)
         else:
 
             self.controlNMS = True
+            self.claseMatDetec.nms = self.controlNMS
 
             self.controlColorNMS = Label(window, text="", height = self._height, width = self._widthCol2, bg="green")
             self.controlColorNMS.grid(column=1, row=6)
