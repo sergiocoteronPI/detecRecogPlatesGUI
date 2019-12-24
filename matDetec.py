@@ -92,11 +92,12 @@ class matDetec():
             origShapeY, origShapeX, _ = _imagen.shape
             
             multY, multX = origShapeY, origShapeX
-            if orig_y < clasMatDetec.dim_fil:
+            if origShapeY < clasMatDetec.dim_fil:
                 multY = clasMatDetec.dim_fil
-            if orig_x < clasMatDetec.dim_col:
+            if origShapeX < clasMatDetec.dim_col:
                 multX = clasMatDetec.dim_col
         except:
+            
             return None, []
 
         frameAdaptado = self.retocar(_imagen)
