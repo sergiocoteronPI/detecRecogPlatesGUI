@@ -14,7 +14,7 @@ import threading
 import tensorflow as tf
 
 import matDetec
-#import matRecog
+import matRecog
 
 class appMatriculas:
 
@@ -53,6 +53,9 @@ class appMatriculas:
         #***************************************************************************#
         self.claseMatDetec = matDetec.clasMatDetec
         self.matDetecClass = matDetec.matDetec()
+
+        self.claseMatOCR = matRecog.clasMatOcr
+        self.matOCRClass = matRecog.matRecog()
         #***************************************************************************#
 
 
@@ -134,7 +137,7 @@ class appMatriculas:
         self.cuadroDeTexto("")
         self.resetCanvas()
 
-        self.panelOCR = Label(window, text="OCR", height = 30, width = 30, borderwidth=2, relief="solid")
+        self.panelOCR = Label(window, text="OCR", height = 30, width = 30, borderwidth=2, relief="solid", anchor=N)
         self.panelOCR.grid(row=1, column=13, columnspan=2, rowspan=10, padx=(20, 20))
 
         # ================================================ BOTONES SUPERIORES ================================================ #
@@ -160,6 +163,49 @@ class appMatriculas:
 
         self.canvasDetection = tkinter.Canvas(window, width=400, height=400)#, background='white'
         self.canvasDetection.grid(row=1, column=2, columnspan=10, rowspan=10, padx=(20, 20))
+
+
+    def crearCanvasOCR(self, _row, recortMatricula, predictionOCR):
+
+        if _row == 2:
+            
+            self.canvasOCR_2 = tkinter.Canvas(window, width=150, height=90)
+            self.canvasOCR_2.grid(row=_row, column=13, columnspan=2)
+            
+            self.imageOCR_2 = ImageTk.PhotoImage(Image.fromarray(cv2.cvtColor(cv2.resize(recortMatricula, (150,64)), cv2.COLOR_BGR2RGB)))
+            self.canvasOCR_2.create_image(0, 0, image=self.imageOCR_2, anchor=NW)
+
+            self.canvasOCR_2.create_text(75, 70, font=("Times New Roman", 15, "bold"), text=predictionOCR)
+
+        if _row == 4:
+            
+            self.canvasOCR_4 = tkinter.Canvas(window, width=150, height=90)
+            self.canvasOCR_4.grid(row=_row, column=13, columnspan=2, rowspan=1, padx=(10, 10))
+
+            self.imageOCR_4 = ImageTk.PhotoImage(Image.fromarray(cv2.cvtColor(cv2.resize(recortMatricula, (150,64)), cv2.COLOR_BGR2RGB)))
+            self.canvasOCR_4.create_image(0, 0, image=self.imageOCR_4, anchor=NW)
+
+            self.canvasOCR_4.create_text(75, 70, font=("Times New Roman", 15, "bold"), text=predictionOCR)
+
+        if _row == 6:
+            
+            self.canvasOCR_6 = tkinter.Canvas(window, width=150, height=90)
+            self.canvasOCR_6.grid(row=_row, column=13, columnspan=2, rowspan=1)
+
+            self.imageOCR_6 = ImageTk.PhotoImage(Image.fromarray(cv2.cvtColor(cv2.resize(recortMatricula, (150,64)), cv2.COLOR_BGR2RGB)))
+            self.canvasOCR_6.create_image(0, 0, image=self.imageOCR_6, anchor=NW)
+
+            self.canvasOCR_6.create_text(75, 70, font=("Times New Roman", 15, "bold"), text=predictionOCR)
+
+        if _row == 10:
+            
+            self.canvasOCR_8 = tkinter.Canvas(window, width=150, height=90)
+            self.canvasOCR_8.grid(row=_row, column=13, columnspan=2, rowspan=1)
+
+            self.imageOCR_8 = ImageTk.PhotoImage(Image.fromarray(cv2.cvtColor(cv2.resize(recortMatricula, (150,64)), cv2.COLOR_BGR2RGB)))
+            self.canvasOCR_8.create_image(0, 0, image=self.imageOCR_8, anchor=NW)
+
+            self.canvasOCR_8.create_text(75, 80, font=("Times New Roman", 15, "bold"), text=predictionOCR)
 
 
     def cuadroDeTexto(self, texto):
@@ -233,15 +279,35 @@ class appMatriculas:
             if self.controlDetection:
                 #codigo de deteccion
                 self.imgOutDetec, self.boxDetec = self.matDetecClass.matDetecFunction(self.frame)
-                self.frame = cv2.resize(self.imgOutDetec, (redimWidth,redimHeight))
 
                 if self.controlOCR:
 
                     #codigo OCR
-                    
-                    #Para cada matricula encontrada le aplicamos el OCR
-                    abc = "Y ademas estoy también haciendo un reconocimiento de caracteres"
-                    print(abc)
+                    _row = 2
+                    for matriculasDetectadas in self.boxDetec:
+                        
+                        coordX, coordY, coordW, coordH = matriculasDetectadas["topleft"]["x"],matriculasDetectadas["topleft"]["y"],\
+                                                         matriculasDetectadas["bottomright"]["x"],matriculasDetectadas["bottomright"]["y"]
+
+                        recortMatricula = self.frame[coordY:coordH, coordX:coordW, :]
+
+                        #cv2.imshow('sdf', recortMatricula)
+                        #cv2.waitKey(0)
+                        #cv2.destroyAllWindows()
+
+                        predictionOCR = self.matOCRClass.matOCRFunction(cv2.cvtColor(recortMatricula, cv2.COLOR_BGR2GRAY))
+
+                        # Mostramos los recortes de matrículas y la predicción hecha #
+                        # ========================================================== #
+
+                        if _row < 10:
+                            self.crearCanvasOCR(_row, recortMatricula, predictionOCR)
+
+                        _row += 2
+
+                        # ========================================================== #
+
+                self.frame = cv2.resize(self.imgOutDetec, (redimWidth,redimHeight))
 
             else:
                 self.frame = cv2.resize(self.frame, (redimWidth,redimHeight))
@@ -323,9 +389,6 @@ class appMatriculas:
         if self.filesNomb != []:
             self.contadorImagen = 0
             self.mostrarImagen()
-
-        #if self.controlColorDetectar:
-            #Ahora ejecutaríamos el código de detectar.
 
     
     def abrirDirectorio(self):
